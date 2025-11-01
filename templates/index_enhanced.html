@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Military AI Screening System - Enhanced</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            background: white; 
+            padding: 30px; 
+            border-radius: 15px; 
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        .header { 
+            text-align: center; 
+            margin-bottom: 40px;
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+        }
+        .header h1 { 
+            font-size: 2.5em; 
+            margin-bottom: 10px;
+            color: white;
+        }
+        .header p { 
+            font-size: 1.2em; 
+            opacity: 0.9;
+        }
+        .section {
+            margin: 30px 0;
+            padding: 25px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #3498db;
+        }
+        .section h2 {
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        .tab {
+            padding: 12px 24px;
+            cursor: pointer;
+            background: white;
+            border: none;
+            border-bottom: 3px solid transparent;
+            font-size: 1em;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        .tab:hover {
+            background: #f8f9fa;
+        }
+        .tab.active {
+            color: #3498db;
+            border-bottom-color: #3498db;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .candidate-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
+            gap: 20px; 
+            margin: 20px 0;
+        }
+        .candidate-card { 
+            border: 2px solid #e0e0e0; 
+            padding: 25px; 
+            border-radius: 12px; 
+            cursor: pointer; 
+            transition: all 0.3s ease;
+            background: white;
+        }
+        .candidate-card:hover { 
+            transform: translateY(-5px); 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+        .candidate-card.excellent:hover { border-color: #27ae60; }
+        .candidate-card.average:hover { border-color: #f39c12; }
+        .candidate-card.poor:hover { border-color: #e74c3c; }
+        .badge { 
+            display: inline-block; 
+            padding: 5px 12px; 
+            border-radius: 20px; 
+            font-size: 0.8em; 
+            font-weight: bold; 
+            margin-bottom: 10px;
+        }
+        .badge.excellent { background: #d5f4e6; color: #27ae60; }
+        .badge.average { background: #fef5e7; color: #f39c12; }
+        .badge.poor { background: #fadbd8; color: #e74c3c; }
+        .btn { 
+            background: #3498db; 
+            color: white; 
+            padding: 12px 25px; 
+            border: none; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-size: 1em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+        .btn:hover { 
+            background: #2980b9; 
+            transform: translateY(-2px);
+        }
+        .btn-success { background: #27ae60; }
+        .btn-success:hover { background: #229954; }
+        .btn-secondary { background: #95a5a6; }
+        .btn-secondary:hover { background: #7f8c8d; }
+        .upload-area {
+            border: 2px dashed #3498db;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            background: white;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        .upload-area:hover {
+            background: #f0f8ff;
+            border-color: #2980b9;
+        }
+        .upload-area.dragover {
+            background: #e3f2fd;
+            border-color: #1976d2;
+        }
+        .file-input {
+            display: none;
+        }
+        .loading { 
+            text-align: center; 
+            padding: 20px; 
+            display: none;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .result { 
+            margin-top: 30px; 
+            padding: 25px; 
+            border-radius: 12px;
+            display: none;
+        }
+        .result.pass { background: #d5f4e6; border: 2px solid #27ae60; }
+        .result.conditional { background: #fef5e7; border: 2px solid #f39c12; }
+        .result.fail { background: #fadbd8; border: 2px solid #e74c3c; }
+        .batch-results {
+            margin-top: 20px;
+        }
+        .batch-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .stat-card h3 {
+            font-size: 2em;
+            color: #3498db;
+            margin-bottom: 5px;
+        }
+        .stat-card p {
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .results-table th {
+            background: #34495e;
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+        .results-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        .results-table tr:hover {
+            background: #f8f9fa;
+        }
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+        .status-pass { background: #d5f4e6; color: #27ae60; }
+        .status-conditional { background: #fef5e7; color: #f39c12; }
+        .status-fail { background: #fadbd8; color: #e74c3c; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 Military AI Pre-Screening System</h1>
+            <p>AI-Powered Physical Fitness Assessment for Military Recruitment</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('single')">Single Candidate</button>
+            <button class="tab" onclick="switchTab('batch')">Batch CSV Upload</button>
+            <button class="tab" onclick="switchTab('help')">Help & Documentation</button>
+        </div>
+
+        <!-- SINGLE CANDIDATE TAB -->
+        <div id="single-tab" class="tab-content active">
+            <div class="section">
+                <h2>🧪 Demo Candidates</h2>
+                <p style="margin-bottom: 20px; color: #666;">Click on a candidate to screen them using AI analysis</p>
+                
+                <div class="candidate-grid">
+                    <div class="candidate-card excellent" onclick="screenCandidate('excellent')">
+                        <div class="badge excellent">EXPECTED: PASS</div>
+                        <h3>✅ Candidate A: Elite Performer</h3>
+                        <p>Excellent movement patterns, high fitness level, optimal biomarkers</p>
+                        <button class="btn">Screen This Candidate</button>
+                    </div>
+                    
+                    <div class="candidate-card average" onclick="screenCandidate('average')">
+                        <div class="badge average">EXPECTED: CONDITIONAL</div>
+                        <h3>⚠️ Candidate B: Average Performer</h3>
+                        <p>Moderate fitness level, some areas need improvement</p>
+                        <button class="btn">Screen This Candidate</button>
+                    </div>
+                    
+                    <div class="candidate-card poor" onclick="screenCandidate('poor')">
+                        <div class="badge poor">EXPECTED: FAIL</div>
+                        <h3>❌ Candidate C: Poor Performer</h3>
+                        <p>Movement deficiencies detected, requires medical evaluation</p>
+                        <button class="btn">Screen This Candidate</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <h3>🔄 AI Analysis in Progress...</h3>
+                <p>Analyzing sensor data and extracting biomarkers</p>
+            </div>
+
+            <div class="result" id="result">
+                <div id="result-content"></div>
+            </div>
+        </div>
+
+        <!-- BATCH CSV TAB -->
+        <div id="batch-tab" class="tab-content">
+            <div class="section">
+                <h2>📁 Batch CSV Upload</h2>
+                <p style="margin-bottom: 20px;">Upload a CSV file with multiple candidate sensor data for batch processing</p>
+                
+                <div style="margin-bottom: 20px;">
+                    <button class="btn btn-success" onclick="downloadTemplate()">
+                        📥 Download CSV Template
+                    </button>
+                    <span style="margin: 0 10px; color: #95a5a6;">|</span>
+                    <small style="color: #7f8c8d;">Download a template CSV file with sample data format</small>
+                </div>
+
+                <input type="file" id="csvFile" class="file-input" accept=".csv" onchange="handleFileSelect(event)">
+                
+                <div class="upload-area" id="uploadArea" onclick="document.getElementById('csvFile').click()">
+                    <div style="font-size: 3em; margin-bottom: 10px;">📤</div>
+                    <h3>Click to Upload CSV File</h3>
+                    <p style="color: #7f8c8d; margin-top: 10px;">or drag and drop your CSV file here</p>
+                    <p style="color: #95a5a6; font-size: 0.9em; margin-top: 5px;">Maximum file size: 16MB</p>
+                </div>
+            </div>
+
+            <div class="loading" id="batch-loading">
+                <div class="spinner"></div>
+                <h3>🔄 Processing Batch Screening...</h3>
+                <p id="batch-status">Reading CSV file...</p>
+            </div>
+
+            <div class="batch-results" id="batch-results" style="display: none;">
+                <div class="section">
+                    <h2>📊 Batch Screening Summary</h2>
+                    <div class="batch-summary" id="batch-summary"></div>
+                    
+                    <div style="margin: 20px 0; text-align: center;">
+                        <button class="btn btn-success" onclick="downloadResults()">
+                            💾 Download Results as CSV
+                        </button>
+                        <button class="btn btn-secondary" onclick="resetBatch()">
+                            🔄 Upload Another File
+                        </button>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h2>📋 Detailed Results</h2>
+                    <div style="overflow-x: auto;">
+                        <table class="results-table" id="results-table">
+                            <thead>
+                                <tr>
+                                    <th>Candidate ID</th>
+                                    <th>Activity</th>
+                                    <th>Confidence</th>
+                                    <th>Decision</th>
+                                    <th>Risk Level</th>
+                                    <th>Recommended Roles</th>
+                                </tr>
+                            </thead>
+                            <tbody id="results-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- HELP TAB -->
+        <div id="help-tab" class="tab-content">
+            <div class="section">
+                <h2>📚 System Overview</h2>
+                <p>This Military AI Screening System uses deep learning to analyze sensor data from wearable devices and assess candidate suitability for military roles.</p>
+                
+                <h3 style="margin-top: 20px;">🎯 Features</h3>
+                <ul style="margin-left: 20px; line-height: 1.8;">
+                    <li><strong>Single Candidate Screening:</strong> Test individual candidates with demo data</li>
+                    <li><strong>Batch CSV Processing:</strong> Upload CSV files to screen multiple candidates at once</li>
+                    <li><strong>Biomarker Extraction:</strong> Movement quality, fatigue index, and smoothness analysis</li>
+                    <li><strong>Role Recommendations:</strong> AI-driven military role suggestions based on performance</li>
+                    <li><strong>Risk Assessment:</strong> Identify potential health and injury risks</li>
+                </ul>
+
+                <h3 style="margin-top: 20px;">📄 CSV File Format</h3>
+                <p>Your CSV file should contain:</p>
+                <ul style="margin-left: 20px; line-height: 1.8;">
+                    <li><strong>Column 1:</strong> candidate_id (optional but recommended)</li>
+                    <li><strong>Columns 2-562:</strong> 561 sensor features from accelerometer and gyroscope data</li>
+                </ul>
+                <p style="margin-top: 10px;"><em>Download the template for the correct format!</em></p>
+
+                <h3 style="margin-top: 20px;">🔬 How It Works</h3>
+                <ol style="margin-left: 20px; line-height: 1.8;">
+                    <li><strong>Data Collection:</strong> Sensor data from wearable devices during physical activities</li>
+                    <li><strong>Preprocessing:</strong> Data is normalized and scaled</li>
+                    <li><strong>AI Analysis:</strong> 1D-CNN model analyzes movement patterns</li>
+                    <li><strong>Biomarker Extraction:</strong> Key health and fitness indicators are extracted</li>
+                    <li><strong>Decision Making:</strong> Knowledge graph maps biomarkers to military roles</li>
+                </ol>
+
+                <h3 style="margin-top: 20px;">📊 Decision Criteria</h3>
+                <ul style="margin-left: 20px; line-height: 1.8;">
+                    <li><strong>PASS (>80% confidence):</strong> Excellent physical performance, suitable for combat roles</li>
+                    <li><strong>CONDITIONAL PASS (60-80%):</strong> Adequate performance, suitable for support roles</li>
+                    <li><strong>FAIL (<60%):</strong> Poor performance, requires medical evaluation</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let batchResults = [];
+
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Show selected tab
+            document.getElementById(tabName + '-tab').classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        async function screenCandidate(type) {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('result').style.display = 'none';
+
+            const demoData = {
+                'excellent': Array(561).fill().map(() => (Math.random() - 0.5) * 2),
+                'average': Array(561).fill().map(() => (Math.random() - 0.5) * 1.2),
+                'poor': Array(561).fill().map(() => (Math.random() - 0.5) * 0.5)
+            };
+
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        sensor_data: demoData[type],
+                        candidate_id: `Demo_${type}`
+                    })
+                });
+
+                const result = await response.json();
+                displaySingleResult(result);
+            } catch (error) {
+                console.error('Error:', error);
+                displayError('Connection error. Please check if server is running.');
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        function displaySingleResult(result) {
+            const resultDiv = document.getElementById('result');
+            const contentDiv = document.getElementById('result-content');
+            
+            if (!result.success) {
+                contentDiv.innerHTML = `
+                    <div style="color: #e74c3c; text-align: center;">
+                        <h3>❌ Error</h3>
+                        <p>${result.error || 'Failed to get prediction'}</p>
+                    </div>
+                `;
+                resultDiv.style.display = 'block';
+                return;
+            }
+
+            const pred = result.prediction;
+            resultDiv.className = 'result ' + pred.decision.toLowerCase().replace(' ', '-');
+
+            const roleTags = pred.recommended_roles.map(role => 
+                `<span class="badge ${role.includes('Infantry') || role.includes('Special') ? 'excellent' : 'average'}">${role}</span>`
+            ).join(' ');
+
+            contentDiv.innerHTML = `
+                <h2>📊 Screening Results</h2>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin: 20px 0;">
+                    <div>
+                        <h3>🎯 Core Assessment</h3>
+                        <p><strong>Activity:</strong> ${pred.activity}</p>
+                        <p><strong>Confidence:</strong> ${(pred.confidence * 100).toFixed(1)}%</p>
+                        <p><strong>Decision:</strong> <span style="font-size: 1.2em; font-weight: bold;">${pred.decision}</span></p>
+                        <p><strong>Risk Level:</strong> ${pred.risk_level}</p>
+                        <p><strong>Performance Score:</strong> ${pred.performance_score}%</p>
+                        <p style="margin-top: 10px; color: #666;"><em>${pred.reason}</em></p>
+                        
+                        <h3 style="margin-top: 20px;">💼 Recommended Roles</h3>
+                        <div style="margin-top: 10px;">
+                            ${roleTags}
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h3>🔬 Biomarkers</h3>
+                        <p><strong>Movement Quality:</strong> ${(pred.biomarkers.movement_quality * 100).toFixed(1)}%</p>
+                        <p><strong>Fatigue Index:</strong> ${pred.biomarkers.fatigue_index.toFixed(3)}</p>
+                        <p><strong>Movement Smoothness:</strong> ${pred.biomarkers.movement_smoothness.toFixed(3)}</p>
+                    </div>
+                </div>
+            `;
+            
+            resultDiv.style.display = 'block';
+            resultDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Batch CSV handling
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                uploadCSV(file);
+            }
+        }
+
+        // Drag and drop
+        const uploadArea = document.getElementById('uploadArea');
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file && file.name.endsWith('.csv')) {
+                uploadCSV(file);
+            } else {
+                alert('Please upload a CSV file');
+            }
+        });
+
+        async function uploadCSV(file) {
+            document.getElementById('batch-loading').style.display = 'block';
+            document.getElementById('batch-results').style.display = 'none';
+            document.getElementById('batch-status').textContent = 'Reading CSV file...';
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                document.getElementById('batch-status').textContent = 'Processing candidates...';
+                
+                const response = await fetch('/batch-predict', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    batchResults = result.results;
+                    displayBatchResults(result);
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Upload error:', error);
+                alert('Failed to process CSV: ' + error.message);
+            } finally {
+                document.getElementById('batch-loading').style.display = 'none';
+            }
+        }
+
+        function displayBatchResults(data) {
+            const summary = data.summary;
+            const summaryDiv = document.getElementById('batch-summary');
+            
+            summaryDiv.innerHTML = `
+                <div class="stat-card">
+                    <h3>${summary.total_candidates}</h3>
+                    <p>Total Candidates</p>
+                </div>
+                <div class="stat-card">
+                    <h3>${summary.pass_count}</h3>
+                    <p>Passed</p>
+                </div>
+                <div class="stat-card">
+                    <h3>${summary.fail_count}</h3>
+                    <p>Failed</p>
+                </div>
+                <div class="stat-card">
+                    <h3>${summary.pass_rate}%</h3>
+                    <p>Pass Rate</p>
+                </div>
+            `;
+
+            // Populate table
+            const tbody = document.getElementById('results-tbody');
+            tbody.innerHTML = '';
+            
+            data.results.forEach(result => {
+                if (result.success) {
+                    const row = tbody.insertRow();
+                    row.innerHTML = `
+                        <td>${result.candidate_id}</td>
+                        <td>${result.activity}</td>
+                        <td>${(result.confidence * 100).toFixed(1)}%</td>
+                        <td><span class="status-badge status-${result.decision.toLowerCase().replace(' ', '-')}">${result.decision}</span></td>
+                        <td>${result.risk_level}</td>
+                        <td>${result.recommended_roles.join(', ')}</td>
+                    `;
+                }
+            });
+
+            document.getElementById('batch-results').style.display = 'block';
+            document.getElementById('batch-results').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        async function downloadTemplate() {
+            window.location.href = '/download-template';
+        }
+
+        async function downloadResults() {
+            try {
+                const response = await fetch('/download-results', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ results: batchResults })
+                });
+
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'screening_results.csv';
+                a.click();
+            } catch (error) {
+                console.error('Download error:', error);
+                alert('Failed to download results');
+            }
+        }
+
+        function resetBatch() {
+            document.getElementById('batch-results').style.display = 'none';
+            document.getElementById('csvFile').value = '';
+            batchResults = [];
+        }
+
+        function displayError(message) {
+            const contentDiv = document.getElementById('result-content');
+            contentDiv.innerHTML = `
+                <div style="color: #e74c3c; text-align: center; padding: 20px;">
+                    <h3>❌ Error</h3>
+                    <p>${message}</p>
+                </div>
+            `;
+            document.getElementById('result').style.display = 'block';
+        }
+
+        // Check server health on load
+        window.addEventListener('load', async () => {
+            try {
+                const response = await fetch('/health');
+                const health = await response.json();
+                console.log('Server health:', health);
+                if (!health.system_ready) {
+                    console.warn('System still initializing...');
+                }
+            } catch (error) {
+                console.error('Server health check failed:', error);
+            }
+        });
+    </script>
+</body>
+</html>
