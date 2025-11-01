@@ -4,5 +4,6 @@ import os
 bind = "0.0.0.0:" + os.environ.get("PORT", "10000")
 workers = 1  # keep workers small when model is loaded in memory
 threads = 2
-timeout = 120  # allow longer startup/loads
+timeout = 300  # increased to 5 minutes for CSV batch processing
+worker_class = 'gthread'  # use threaded workers for better concurrency
 preload_app = False  # avoid loading model in master if memory is tight
