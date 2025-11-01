@@ -2,6 +2,12 @@ import os
 import numpy as np
 import pandas as pd
 import tensorflow as tf
+
+# Configure TensorFlow for CPU optimization (MUST be before any TF operations)
+tf.config.threading.set_intra_op_parallelism_threads(2)
+tf.config.threading.set_inter_op_parallelism_threads(2)
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # Reduce TF logging
+
 import joblib
 import pickle
 import io
@@ -213,8 +219,10 @@ def process_single_candidate(sensor_data_array, candidate_id=None):
         
         reshaped_data = scaled_data.reshape(1, 561, 1)
         
-        # Make prediction
+        # Make prediction (with timeout protection)
+        logger.debug(f"Making prediction for candidate {candidate_id}")
         predictions = model.predict(reshaped_data, verbose=0)
+        logger.debug(f"Prediction complete for candidate {candidate_id}")
         confidence = float(np.max(predictions))
         predicted_class = int(np.argmax(predictions, axis=1)[0])
         activity = label_encoder.inverse_transform([predicted_class])[0]
@@ -390,8 +398,10 @@ def batch_predict():
             sensor_data = df.iloc[idx][feature_cols].values
             candidate_id = candidate_ids[idx]
             
+            logger.info(f"🔄 Processing candidate {idx+1}/{len(df)}: {candidate_id}")
             result = process_single_candidate(sensor_data, candidate_id)
             results.append(result)
+            logger.info(f"✅ Completed candidate {idx+1}/{len(df)}")
         
         # Calculate summary
         successful = [r for r in results if r.get('success', False)]
